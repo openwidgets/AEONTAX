@@ -47,3 +47,5 @@ jobs:
       - run: pnpm --filter @aeoncrm/db migrate
       - run: pnpm --filter @aeoncrm/core typecheck
       - run: pnpm --filter @aeoncrm/core test
+      - run: pnpm --filter @aeontax/tax typecheck
+      - run: pnpm --filter @aeontax/tax test
