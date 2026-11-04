@@ -50,7 +50,7 @@ export const ticket = pgTable("Ticket", {
 }, (t) => [index("Ticket_tenantId_status_priority_idx").on(t.tenantId, t.status, t.priority), index("Ticket_tenantId_companyId_idx").on(t.tenantId, t.companyId), index("Ticket_tenantId_contactId_idx").on(t.tenantId, t.contactId)]);
 
 
-export const taxRuleStatus = pgEnum("TaxRuleStatus", ["DRAFT", "PUBLISHED", "RETIRED"]);
+
 
 export const taxJurisdiction = pgTable("TaxJurisdiction", {
   id: id(),
