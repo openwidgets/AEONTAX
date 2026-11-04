@@ -50,6 +50,7 @@ export function validateProgressiveRule(rule: ProgressiveTaxRule): void {
     if (rule.effectiveTo < rule.effectiveFrom) throw new Error("rule.effectiveTo cannot precede effectiveFrom");
   }
   if (rule.status !== "PUBLISHED") throw new Error("only PUBLISHED tax rules can be used for calculations");
+  if (!Number.isInteger(rule.minorUnitDigits) || rule.minorUnitDigits < 0 || rule.minorUnitDigits > 6) throw new Error("rule.minorUnitDigits must be an integer between 0 and 6");
   if (rule.rounding !== "HALF_UP") throw new Error("unsupported rounding mode");
   if (!rule.source?.title?.trim() || !rule.source.authority?.trim() || !rule.source.url?.trim() || !rule.source.retrievedAt?.trim()) {
     throw new Error("rule source title, authority, URL and retrievedAt are required");
@@ -92,7 +93,7 @@ export function calculateProgressiveTax(
   }
   if (!input.taxpayerReference?.trim()) throw new Error("taxpayerReference is required");
 
-  const taxableAmountMinor = parseMinorUnits(input.taxableAmount, "taxableAmount");
+  const taxableAmountMinor = parseMinorUnits(input.taxableAmount, "taxableAmount", rule.minorUnitDigits);
   const rows: TaxBracketResult[] = [];
   let lower = 0n;
   let remaining = taxableAmountMinor;
@@ -138,7 +139,7 @@ export function calculateProgressiveTax(
     currency: rule.currency,
     brackets: rows,
     totalTaxMinor: totalTaxMinor.toString(),
-    totalTax: formatMajorUnits(totalTaxMinor),
+    totalTax: formatMajorUnits(totalTaxMinor, rule.minorUnitDigits),
     assumptions: [...(input.assumptions ?? [])],
     engine: {
       name: "AEONTAX deterministic progressive calculator",
