@@ -19,10 +19,10 @@ The registry is currently in-memory. Persistent storage, approval/version public
 
 ## Calculation contract
 
-- Amounts supplied to the calculator are non-negative decimal strings with at most two fractional digits.
+- Amounts supplied to the calculator are non-negative decimal strings with the rule-defined currency precision (0–6 fractional digits).
 - Bracket upper bounds are integer minor units; the final bracket must have a `null` upper bound.
 - Rates are integer basis points (10,000 = 100%).
-- Rounding is half-up to the currency minor unit.
+- Rounding is half-up to the currency minor unit; the rule supplies the minor-unit precision.
 - The input includes taxpayer reference, jurisdiction, tax type, tax year, effective date and currency.
 - The result records the exact rule ID/version, source metadata, input snapshot, assumptions and bracket breakdown.
 
