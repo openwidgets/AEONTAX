@@ -1,88 +1,87 @@
-# AEONCRM
+# AEONTAX
 
-**The Agentic CRM Operating System**
+**The Agentic Tax Operating System**
 
-> Humans manage relationships. Agents operate the CRM.
+AEONTAX is being built on the existing AEONCRM foundation. The CRM foundation remains available for relationships, clients, engagements, tasks, approvals, agent memory and audit; AEONTAX adds jurisdiction-aware tax rules, deterministic calculations, tax preparation workflows and tax operations.
 
-AEONCRM is a unified, agent-first CRM platform combining CRM operations, AI agents, MCP, REST/OpenAPI, A2A, memory, intelligence, governance, and integrations in one deployable project.
+## Product direction
 
-## Vision
+- One governed platform for tax clients, preparers, reviewers and administrators
+- Deterministic, versioned tax calculations with source evidence and effective dates
+- Jurisdiction registry and tax-year rule publication
+- Tax preparation worksheets and reconciliation workflows
+- Tenant-scoped calculation history and audit records
+- Agent-assisted workflows with approval gates for consequential actions
+- Web/API surface, with a tax-specific MCP and ChatGPT Apps SDK surface planned
 
-AEONCRM is not a chatbot added to a traditional CRM. The agent is a first-class interface and operator of the CRM, while the structured web application remains available for inspection, editing, reporting, and administration.
+## Existing CRM foundation
 
-## Core capabilities
+The existing AEONCRM implementation is preserved:
 
-- Companies, contacts, leads, deals and pipelines
-- Activities, tasks, notes, files and relationship timelines
-- AI agent with planning, tools, memory and guardrails
-- MCP tools for agent-to-CRM operations
-- REST/OpenAPI API
-- Agent-to-agent (A2A) integration boundary
-- Approval workflows and audit trail
-- Semantic search and CRM intelligence
-- External integrations, including OOPSCRM
-- Docker-first deployment
+- Companies, contacts, leads, deals, tasks and activities
+- Tenant identity and role authorization
+- Agent conversations, approvals and memory
+- Hash-chained audit events
+- Governed tool registry and CRM workspace
+
+## Tax foundation
+
+- `packages/tax`: rule contracts, progressive calculator, immutable in-memory rule registry and imported tax review workflows
+- `packages/core/src/tax.ts`: tenant-scoped rule publication and calculation services
+- `packages/db/src/schema.ts`: tenant-scoped tax jurisdiction, rule-version and calculation tables
+- `packages/tax/src/workflows.ts`: selected preparation, reconciliation, indirect-tax and cross-border worksheet functions
+
+## Important correctness boundary
+
+The progressive calculator executes only published, source-backed rules supplied to it. The repository currently contains no seeded country or state tax rates, tax brackets, deductions, credits, filing rules or official authority integrations. Imported worksheet functions are review aids, not legal determinations or completed tax engines.
+
+No US federal/state or India income-tax/GST engine should be considered complete until its rule corpus has official source citations, effective dates, independent review and golden test cases.
 
 ## Architecture
 
 ```text
-                         AEONCRM
-                            |
-                 +----------+----------+
-                 |                     |
-             Human UI              AEON Agent
-                 |                     |
-                 +----------+----------+
-                            |
-                    Agent Runtime
-                            |
-          +-----------------+-----------------+
-          |                 |                 |
-         MCP              REST              A2A
-          |                 |                 |
-          +-----------------+-----------------+
-                            |
-                       CRM Core
-                            |
-             +--------------+--------------+
-             |              |              |
-        PostgreSQL       pgvector       Object Store
+                       AEONTAX
+                          |
+              +-----------+-----------+
+              |                       |
+          Tax workspace           AEON Agent
+              |                       |
+              +-----------+-----------+
+                          |
+                  Governed core
+                          |
+          +---------------+----------------+
+          |               |                |
+      Tax engine       CRM foundation   Audit / approvals
+          |               |                |
+          +---------------+----------------+
+                          |
+                 PostgreSQL / Drizzle
 ```
 
-## Initial technology direction
+## Technology
 
 - Next.js + TypeScript
-- PostgreSQL + pgvector
-- Prisma
-- Redis
-- OpenAI-powered agent runtime
-- MCP + REST/OpenAPI + A2A
-- Docker Compose
-- Coolify-ready deployment
+- PostgreSQL + Drizzle ORM
+- Workspace packages for core, agent, database and tax engine
+- Tenant-scoped application services
+- Vitest test foundation
 
 ## Repository structure
 
 ```text
 apps/web                 Web application
-packages/core            CRM domain and business logic
+packages/core            CRM and tax application services
 packages/agent           Agent runtime, planning and memory
-packages/mcp             MCP server and CRM tools
-packages/api             REST/OpenAPI surface
-packages/a2a             Agent-to-agent protocol boundary
-packages/governance      Permissions, approvals and audit
-packages/integrations    External systems and connectors
-packages/ui              Shared UI components
-packages/db              Prisma schema and database access
-infra                    Docker and deployment configuration
-docs                     Architecture and product documentation
+packages/db              Drizzle schema and database access
+packages/tax             Deterministic tax engine and review workflows
+docs                     Architecture, roadmap and integration decisions
 ```
 
-## Development principle
+## Source integrations
 
-AEONCRM owns its CRM domain model. External systems such as OOPSCRM are connectors rather than mandatory dependencies. This keeps the platform portable and allows the agent to operate against both native AEONCRM data and approved external CRM systems.
+See [docs/SOURCE_REPOSITORY_INTEGRATION.md](docs/SOURCE_REPOSITORY_INTEGRATION.md) for the code review and selective integration decisions from `openwidgets/oopsone` and `openwidgets/oopstax`.
 
-## Status
+## Current status
 
-**Phase 0 — Foundation initialized.**
-
-The next milestones are the monorepo scaffold, CRM schema, web shell, agent runtime, MCP tools, API, governance, integrations, tests, and production deployment.
+**Foundation phase.** Tax-domain contracts, progressive calculation primitives, tenant-scoped persistence services and selected review workflows have been added. Database migration generation, jurisdiction rule corpora, document security, provider integrations, tax-specific UI/MCP and production validation remain outstanding.
