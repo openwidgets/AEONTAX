@@ -24,7 +24,7 @@ function canonicalJson(value: unknown): string {
     const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b));
     return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`).join(",")}}`;
   }
-  return JSON.stringify(value);
+  return JSON.stringify(value) ?? "null";
 }
 
 function ruleFromRecord(value: unknown): ProgressiveTaxRule {
@@ -68,43 +68,44 @@ export const taxRuleService = {
     }
     await agentApprovalService.claimExecution({ tenantId, userId: identity.userId }, input.approvalId);
     try {
-    const rows = await db.insert(taxRuleVersion).values({
-      id: randomUUID(),
-      tenantId,
-      jurisdictionCode: input.rule.jurisdiction,
-      taxType: input.rule.taxType,
-      taxYear: input.rule.taxYear,
-      version: input.rule.version,
-      status: "PUBLISHED",
-      effectiveFrom: input.rule.effectiveFrom,
-      effectiveTo: input.rule.effectiveTo,
-      currency: input.rule.currency,
-      ruleDefinition: structuredClone(input.rule),
-      sourceEvidence: structuredClone(input.rule.source),
-      createdBy: identity.userId,
-      publishedAt: new Date(),
-    }).returning();
+      const rows = await db.insert(taxRuleVersion).values({
+        id: randomUUID(),
+        tenantId,
+        jurisdictionCode: input.rule.jurisdiction,
+        taxType: input.rule.taxType,
+        taxYear: input.rule.taxYear,
+        version: input.rule.version,
+        status: "PUBLISHED",
+        effectiveFrom: input.rule.effectiveFrom,
+        effectiveTo: input.rule.effectiveTo,
+        currency: input.rule.currency,
+        ruleDefinition: structuredClone(input.rule),
+        sourceEvidence: structuredClone(input.rule.source),
+        createdBy: identity.userId,
+        publishedAt: new Date(),
+      }).returning();
 
-    await agentAuditService.append(
-      { tenantId, userId: identity.userId },
-      {
-        correlationId: input.correlationId,
-        event: "EXECUTED",
-        tool: "tax.rules.publish",
-        outcome: "published",
-        metadata: {
-          approvalId: input.approvalId,
-          taxRuleVersionId: rows[0].id,
-          jurisdiction: input.rule.jurisdiction,
-          taxType: input.rule.taxType,
-          taxYear: input.rule.taxYear,
-          version: input.rule.version,
-          source: input.rule.source,
+      await agentAuditService.append(
+        { tenantId, userId: identity.userId },
+        {
+          correlationId: input.correlationId,
+          event: "EXECUTED",
+          tool: "tax.rules.publish",
+          outcome: "published",
+          metadata: {
+            approvalId: input.approvalId,
+            taxRuleVersionId: rows[0].id,
+            jurisdiction: input.rule.jurisdiction,
+            taxType: input.rule.taxType,
+            taxYear: input.rule.taxYear,
+            version: input.rule.version,
+            source: input.rule.source,
+          },
         },
-      },
-    );
-    await agentApprovalService.markExecuted({ tenantId, userId: identity.userId }, input.approvalId);
-    return rows[0];
+      );
+      await agentApprovalService.markExecuted({ tenantId, userId: identity.userId }, input.approvalId);
+      return rows[0];
+
     } catch (error) {
       await agentApprovalService.releaseExecution({ tenantId, userId: identity.userId }, input.approvalId);
       throw error;
