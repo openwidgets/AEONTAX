@@ -11,6 +11,7 @@ import {
 import { assertIdentity, canApprove, type AeonIdentity } from "./identity";
 import type { TenantContext } from "./agent-memory";
 import { agentAuditService } from "./agent-audit";
+import { agentApprovalService } from "./agent-memory";
 
 function requireTenant(context: TenantContext): string {
   if (!context?.tenantId?.trim()) throw new Error("tenant context is required");
@@ -28,7 +29,7 @@ function ruleFromRecord(value: unknown): ProgressiveTaxRule {
 
 export type PublishTaxRuleInput = {
   rule: ProgressiveTaxRule;
-  approvalReference: string;
+  approvalId: string;
   correlationId: string;
 };
 
@@ -41,12 +42,23 @@ export const taxRuleService = {
   publish: async (identity: AeonIdentity, input: PublishTaxRuleInput) => {
     assertIdentity(identity);
     if (!canApprove(identity)) throw new Error("tax rule publication requires OWNER or ADMIN approval authority");
-    if (!input.approvalReference?.trim()) throw new Error("approvalReference is required");
+    if (!input.approvalId?.trim()) throw new Error("approvalId is required");
     if (!input.correlationId?.trim()) throw new Error("correlationId is required");
     if (input.rule.status !== "PUBLISHED") throw new Error("only a PUBLISHED rule can be published");
     validateProgressiveRule(input.rule);
 
     const tenantId = identity.tenantId;
+    const approval = await agentApprovalService.get({ tenantId, userId: identity.userId }, input.approvalId);
+    if (!approval || approval.status !== "APPROVED" || approval.tool !== "tax.rules.publish") {
+      throw new Error("an approved tax.rules.publish approval is required");
+    }
+    if (approval.correlationId !== input.correlationId) throw new Error("approval correlation does not match");
+    const approvedArguments = approval.arguments as { rule?: unknown } | null;
+    if (!approvedArguments?.rule || JSON.stringify(approvedArguments.rule) !== JSON.stringify(input.rule)) {
+      throw new Error("published tax rule does not match the approved rule payload");
+    }
+    await agentApprovalService.claimExecution({ tenantId, userId: identity.userId }, input.approvalId);
+    try {
     const rows = await db.insert(taxRuleVersion).values({
       id: randomUUID(),
       tenantId,
@@ -72,7 +84,7 @@ export const taxRuleService = {
         tool: "tax.rules.publish",
         outcome: "published",
         metadata: {
-          approvalReference: input.approvalReference,
+          approvalId: input.approvalId,
           taxRuleVersionId: rows[0].id,
           jurisdiction: input.rule.jurisdiction,
           taxType: input.rule.taxType,
@@ -82,7 +94,12 @@ export const taxRuleService = {
         },
       },
     );
+    await agentApprovalService.markExecuted({ tenantId, userId: identity.userId }, input.approvalId);
     return rows[0];
+    } catch (error) {
+      await agentApprovalService.releaseExecution({ tenantId, userId: identity.userId }, input.approvalId);
+      throw error;
+    }
   },
 
   listPublished: async (context: TenantContext, filters?: {
