@@ -33,6 +33,8 @@ export type ProgressiveTaxRule = {
   effectiveFrom: string;
   effectiveTo: string | null;
   currency: string;
+  /** ISO 4217 minor-unit precision supplied by the reviewed jurisdiction rule. */
+  minorUnitDigits: number;
   rounding: "HALF_UP";
   brackets: TaxBracket[];
   source: TaxRuleSource;
