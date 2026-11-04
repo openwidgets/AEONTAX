@@ -8,17 +8,24 @@ import type {
 
 const BASIS_POINTS = 10_000n;
 
-function parseMinorUnits(amount: string, field: string): bigint {
-  if (typeof amount !== "string" || !/^(0|[1-9]\d*)(\.\d{1,2})?$/.test(amount)) {
-    throw new Error(`${field} must be a non-negative decimal string with at most two fractional digits`);
+function parseMinorUnits(amount: string, field: string, digits: number): bigint {
+  const pattern = digits === 0
+    ? /^(0|[1-9]\\d*)$/
+    : new RegExp(`^(0|[1-9]\\\\d*)(\\\\.\\\\d{1,${digits}})?$`);
+  if (typeof amount !== "string" || !pattern.test(amount)) {
+    throw new Error(`${field} must be a non-negative decimal string with at most ${digits} fractional digits`);
   }
   const [whole, fraction = ""] = amount.split(".");
-  return BigInt(whole) * 100n + BigInt((fraction + "00").slice(0, 2));
+  const factor = 10n ** BigInt(digits);
+  const fractionalMinor = digits === 0 ? 0n : BigInt((fraction + "0".repeat(digits)).slice(0, digits) || "0");
+  return BigInt(whole) * factor + fractionalMinor;
 }
 
-function formatMajorUnits(minor: bigint): string {
-  const whole = minor / 100n;
-  const fraction = (minor % 100n).toString().padStart(2, "0");
+function formatMajorUnits(minor: bigint, digits: number): string {
+  if (digits === 0) return minor.toString();
+  const factor = 10n ** BigInt(digits);
+  const whole = minor / factor;
+  const fraction = (minor % factor).toString().padStart(digits, "0");
   return `${whole}.${fraction}`;
 }
 
@@ -28,7 +35,8 @@ function roundHalfUp(numerator: bigint, denominator: bigint): bigint {
 }
 
 function assertIsoDate(value: string, field: string): void {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number.isNaN(Date.parse(`${value}T00:00:00.000Z`))) {
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value) || Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
     throw new Error(`${field} must be a valid YYYY-MM-DD date`);
   }
 }
