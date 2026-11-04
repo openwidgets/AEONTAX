@@ -92,3 +92,6 @@ export { agentAuditService } from "./agent-audit";
 export type { AgentAuditInput } from "./agent-audit";
 export { ToolRegistry, createDefaultToolRegistry } from "./tool-registry";
 export type { GovernedTool, ToolAccess, ToolRisk } from "./tool-registry";
+
+export { taxRuleService, taxCalculationService } from "./tax";
+export type { PublishTaxRuleInput } from "./tax";
