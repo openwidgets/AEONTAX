@@ -44,6 +44,20 @@ AEONTAX already uses a different stack: Next.js, Drizzle and PostgreSQL, with te
 
 Therefore the reusable design principles are retained, but the FastAPI/Supabase implementation is not copied into AEONTAX. Adding a second authentication provider, database client, or parallel tenant model would split the security boundary.
 
+
+### OOPSONE module-level review
+
+The following modules were inspected beyond the architecture documents:
+
+- `apps/api/app/routers/files.py`: owner-scoped file metadata CRUD, but no object-byte upload/download or malware scanning.
+- `apps/api/app/routers/integrations.py`: a small GitHub/Vercel/Render/Cloudflare registry; its list/disconnect operations are not sufficiently account-scoped to transplant as-is.
+- `apps/api/app/routers/webhooks.py`: accepts JSON and returns `queued: false`; provider signature validation and durable job enqueueing are not implemented there.
+- `apps/api/app/execution/queue.py`: basic queued/running/succeeded/failed status updates; not a complete lease, retry, dead-letter or idempotency implementation.
+- `apps/worker/idempotency.py`, `retry_policy.py`, and `secret_boundary.py`: useful small patterns, but they are not a substitute for transactional uniqueness, secret-vault integration, structured redaction and tested worker orchestration.
+- `apps/api/app/routers/notifications.py`: user-scoped notification reads and read-state updates.
+
+These modules were not copied because their current implementation is either a metadata stub or lacks controls required for tax records and external tax filing. AEONTAX should implement equivalent capabilities against its existing PostgreSQL/Drizzle and identity model, with tenant scoping, verified webhook signatures, durable jobs, idempotency keys and secret references designed first.
+
 ## Gaps retained for subsequent work
 
 1. Generate and apply the Drizzle migration for `TaxJurisdiction`, `TaxRuleVersion`, and `TaxCalculation`.
