@@ -84,8 +84,8 @@ export const dashboardService = {
   },
 };
 
-export { assertIdentity, canApprove } from "./identity";
-export type { AeonIdentity } from "./identity";
+export { assertIdentity, canApprove, resolveTenantIdentity } from "./identity";
+export type { AeonIdentity, VerifiedPrincipal } from "./identity";
 export { agentConversationService, agentMessageService, agentApprovalService } from "./agent-memory";
 export type { TenantContext } from "./agent-memory";
 export { agentAuditService } from "./agent-audit";
