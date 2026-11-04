@@ -35,7 +35,7 @@ export type PublishTaxRuleInput = {
 
 /**
  * Tenant-scoped persistence and execution boundary for tax rules.
- * Publishing requires an OWNER or ADMIN identity and a recorded approval
+ * Publishing requires an OWNER or ADMIN identity and a verified approval
  * reference. Calculation only reads PUBLISHED rules effective on asOfDate.
  */
 export const taxRuleService = {
@@ -80,7 +80,7 @@ export const taxRuleService = {
       { tenantId, userId: identity.userId },
       {
         correlationId: input.correlationId,
-        event: "APPROVED",
+        event: "EXECUTED",
         tool: "tax.rules.publish",
         outcome: "published",
         metadata: {
