@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@aeoncrm/db": "workspace:*",
-    "drizzle-orm": "^0.36.4"
+    "drizzle-orm": "^0.36.4",
+    "@aeontax/tax": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
