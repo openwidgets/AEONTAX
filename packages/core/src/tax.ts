@@ -18,6 +18,15 @@ function requireTenant(context: TenantContext): string {
   return context.tenantId;
 }
 
+function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b));
+    return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
 function ruleFromRecord(value: unknown): ProgressiveTaxRule {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new Error("stored tax rule definition is invalid");
@@ -54,7 +63,7 @@ export const taxRuleService = {
     }
     if (approval.correlationId !== input.correlationId) throw new Error("approval correlation does not match");
     const approvedArguments = approval.arguments as { rule?: unknown } | null;
-    if (!approvedArguments?.rule || JSON.stringify(approvedArguments.rule) !== JSON.stringify(input.rule)) {
+    if (!approvedArguments?.rule || canonicalJson(approvedArguments.rule) !== canonicalJson(input.rule)) {
       throw new Error("published tax rule does not match the approved rule payload");
     }
     await agentApprovalService.claimExecution({ tenantId, userId: identity.userId }, input.approvalId);
