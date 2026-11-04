@@ -60,14 +60,15 @@ These modules were not copied because their current implementation is either a m
 
 ## Gaps retained for subsequent work
 
-1. Generate and apply the Drizzle migration for `TaxJurisdiction`, `TaxRuleVersion`, and `TaxCalculation`.
-2. Add tenant-scoped tax client, engagement, document metadata, consent and filing records.
-3. Add secure document storage and upload scanning; do not store raw taxpayer documents in agent conversation memory.
-4. Add integration connection records and secret references for approved tax software, e-file, accounting and authority providers.
-5. Add durable background jobs, retries, idempotency and provider callbacks for external filing/status workflows.
-6. Add jurisdiction-specific rule corpora with official citations, effective dates, reviewer approvals and golden test cases.
-7. Add a tax-specific MCP/UI surface. The source OOPSTAX MCP route is a useful Apps SDK reference, but its complete widget catalog is not copied into AEONTAX.
-8. Add CI execution of typecheck, unit tests, migration checks and tenant-isolation tests.
+1. Replace the temporary environment-based `getRequestIdentity` adapter with verified user authentication and tenant membership checks before exposing tax workflows or sensitive taxpayer data.
+2. Generate and apply the Drizzle migration for `TaxJurisdiction`, `TaxRuleVersion`, and `TaxCalculation`.
+3. Add tenant-scoped tax client, engagement, document metadata, consent and filing records.
+4. Add secure document storage and upload scanning; do not store raw taxpayer documents in agent conversation memory.
+5. Add integration connection records and secret references for approved tax software, e-file, accounting and authority providers.
+6. Add durable background jobs, retries, idempotency and provider callbacks for external filing/status workflows.
+7. Add jurisdiction-specific rule corpora with official citations, effective dates, reviewer approvals and golden test cases.
+8. Add a tax-specific MCP/UI surface. The source OOPSTAX MCP route is a useful Apps SDK reference, but its complete widget catalog is not copied into AEONTAX.
+9. Add CI execution of typecheck, unit tests, migration checks and tenant-isolation tests.
 
 ## Security and correctness notes
 
