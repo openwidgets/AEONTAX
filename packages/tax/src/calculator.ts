@@ -9,6 +9,7 @@ import type {
 const BASIS_POINTS = 10_000n;
 
 function parseMinorUnits(amount: string, field: string, digits: number): bigint {
+  if (typeof amount !== "string") throw new Error(`${field} must be a decimal string`);
   const [whole, fraction, extra] = amount.split(".");
   const wholeIsValid = typeof whole === "string" && /^(0|[1-9][0-9]*)$/.test(whole);
   const fractionIsValid = fraction === undefined
