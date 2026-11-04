@@ -9,15 +9,16 @@ import type {
 const BASIS_POINTS = 10_000n;
 
 function parseMinorUnits(amount: string, field: string, digits: number): bigint {
-  const pattern = digits === 0
-    ? /^(0|[1-9]\\d*)$/
-    : new RegExp(`^(0|[1-9]\\\\d*)(\\\\.\\\\d{1,${digits}})?$`);
-  if (typeof amount !== "string" || !pattern.test(amount)) {
+  const [whole, fraction, extra] = amount.split(".");
+  const wholeIsValid = typeof whole === "string" && /^(0|[1-9][0-9]*)$/.test(whole);
+  const fractionIsValid = fraction === undefined
+    ? true
+    : digits > 0 && /^[0-9]+$/.test(fraction) && fraction.length <= digits;
+  if (typeof amount !== "string" || !wholeIsValid || !fractionIsValid || extra !== undefined) {
     throw new Error(`${field} must be a non-negative decimal string with at most ${digits} fractional digits`);
   }
-  const [whole, fraction = ""] = amount.split(".");
   const factor = 10n ** BigInt(digits);
-  const fractionalMinor = digits === 0 ? 0n : BigInt((fraction + "0".repeat(digits)).slice(0, digits) || "0");
+  const fractionalMinor = digits === 0 ? 0n : BigInt(((fraction ?? "") + "0".repeat(digits)).slice(0, digits) || "0");
   return BigInt(whole) * factor + fractionalMinor;
 }
 
@@ -36,7 +37,7 @@ function roundHalfUp(numerator: bigint, denominator: bigint): bigint {
 
 function assertIsoDate(value: string, field: string): void {
   const parsed = new Date(`${value}T00:00:00.000Z`);
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value) || Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
+  if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value) || Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
     throw new Error(`${field} must be a valid YYYY-MM-DD date`);
   }
 }
