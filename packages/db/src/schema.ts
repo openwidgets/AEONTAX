@@ -11,6 +11,7 @@ export const membershipRole = pgEnum("MembershipRole", ["OWNER", "ADMIN", "MEMBE
 export const leadStatus = pgEnum("LeadStatus", ["NEW", "CONTACTED", "QUALIFIED", "CONVERTED", "LOST"]);
 export const ticketStatus = pgEnum("TicketStatus", ["OPEN", "PENDING", "RESOLVED", "CLOSED"]);
 export const ticketPriority = pgEnum("TicketPriority", ["LOW", "MEDIUM", "HIGH", "URGENT"]);
+export const taxRuleStatus = pgEnum("TaxRuleStatus", ["DRAFT", "PUBLISHED", "RETIRED"]);
 
 const id = () => text().primaryKey().notNull();
 const createdAt = () => timestamp("createdAt", { withTimezone: true }).defaultNow().notNull();
@@ -47,6 +48,68 @@ export const deal = pgTable("Deal", {
 export const ticket = pgTable("Ticket", {
   id: id(), tenantId: text().notNull(), subject: text().notNull(), description: text(), status: ticketStatus().default("OPEN").notNull(), priority: ticketPriority().default("MEDIUM").notNull(), companyId: text(), contactId: text(), createdAt: createdAt(), updatedAt: updatedAt(), resolvedAt: timestamp("resolvedAt", { withTimezone: true }),
 }, (t) => [index("Ticket_tenantId_status_priority_idx").on(t.tenantId, t.status, t.priority), index("Ticket_tenantId_companyId_idx").on(t.tenantId, t.companyId), index("Ticket_tenantId_contactId_idx").on(t.tenantId, t.contactId)]);
+
+
+export const taxRuleStatus = pgEnum("TaxRuleStatus", ["DRAFT", "PUBLISHED", "RETIRED"]);
+
+export const taxJurisdiction = pgTable("TaxJurisdiction", {
+  id: id(),
+  tenantId: text().notNull(),
+  code: text().notNull(),
+  countryCode: text().notNull(),
+  level: text().notNull(),
+  name: text().notNull(),
+  authorityName: text(),
+  authorityUrl: text(),
+  implementationStatus: text().default("NOT_STARTED").notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}, (t) => [
+  uniqueIndex("TaxJurisdiction_tenantId_code_key").on(t.tenantId, t.code),
+  index("TaxJurisdiction_tenantId_countryCode_idx").on(t.tenantId, t.countryCode),
+]);
+
+export const taxRuleVersion = pgTable("TaxRuleVersion", {
+  id: id(),
+  tenantId: text().notNull(),
+  jurisdictionCode: text().notNull(),
+  taxType: text().notNull(),
+  taxYear: text().notNull(),
+  version: text().notNull(),
+  status: taxRuleStatus().default("DRAFT").notNull(),
+  effectiveFrom: text().notNull(),
+  effectiveTo: text(),
+  currency: text().notNull(),
+  ruleDefinition: jsonb().notNull(),
+  sourceEvidence: jsonb().notNull(),
+  createdBy: text(),
+  publishedAt: timestamp("publishedAt", { withTimezone: true }),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}, (t) => [
+  uniqueIndex("TaxRuleVersion_tenant_rule_version_key").on(t.tenantId, t.jurisdictionCode, t.taxType, t.taxYear, t.version),
+  index("TaxRuleVersion_tenant_jurisdiction_year_status_idx").on(t.tenantId, t.jurisdictionCode, t.taxYear, t.status),
+]);
+
+export const taxCalculation = pgTable("TaxCalculation", {
+  id: id(),
+  tenantId: text().notNull(),
+  taxpayerReference: text().notNull(),
+  jurisdictionCode: text().notNull(),
+  taxType: text().notNull(),
+  taxYear: text().notNull(),
+  ruleVersionId: text().notNull(),
+  inputSnapshot: jsonb().notNull(),
+  resultSnapshot: jsonb().notNull(),
+  currency: text().notNull(),
+  totalTaxMinor: text().notNull(),
+  calculatedBy: text(),
+  calculatedAt: createdAt(),
+}, (t) => [
+  index("TaxCalculation_tenant_taxpayer_date_idx").on(t.tenantId, t.taxpayerReference, t.calculatedAt),
+  index("TaxCalculation_tenant_jurisdiction_year_idx").on(t.tenantId, t.jurisdictionCode, t.taxYear),
+  index("TaxCalculation_tenant_ruleVersion_idx").on(t.tenantId, t.ruleVersionId),
+]);
 
 export const product = pgTable("Product", {
   id: id(), tenantId: text().notNull(), name: text().notNull(), sku: text(), description: text(), unitPrice: numeric({ precision: 18, scale: 2 }).notNull(), currency: text().default("INR").notNull(), active: boolean().default(true).notNull(), createdAt: createdAt(), updatedAt: updatedAt(),
@@ -88,6 +151,9 @@ export type Contact = typeof contact.$inferSelect;
 export type Lead = typeof lead.$inferSelect;
 export type Deal = typeof deal.$inferSelect;
 export type Ticket = typeof ticket.$inferSelect;
+export type TaxJurisdiction = typeof taxJurisdiction.$inferSelect;
+export type TaxRuleVersion = typeof taxRuleVersion.$inferSelect;
+export type TaxCalculation = typeof taxCalculation.$inferSelect;
 export type Product = typeof product.$inferSelect;
 export type LineItem = typeof lineItem.$inferSelect;
 export type Activity = typeof activity.$inferSelect;
